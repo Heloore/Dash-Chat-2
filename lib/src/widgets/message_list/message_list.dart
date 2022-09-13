@@ -10,6 +10,7 @@ class MessageList extends StatefulWidget {
     this.quickReplyOptions = const QuickReplyOptions(),
     this.scrollToBottomOptions = const ScrollToBottomOptions(),
     this.typingUsers,
+    this.onChatTap,
     Key? key,
   }) : super(key: key);
 
@@ -34,6 +35,9 @@ class MessageList extends StatefulWidget {
   /// List of users currently typing in the chat
   final List<ChatUser>? typingUsers;
 
+  /// Callback on tap on chat widget
+  final void Function()? onChatTap;
+
   @override
   _MessageListState createState() => _MessageListState();
 }
@@ -45,8 +49,7 @@ class _MessageListState extends State<MessageList> {
 
   @override
   void initState() {
-    scrollController =
-        widget.messageListOptions.scrollController ?? ScrollController();
+    scrollController = widget.messageListOptions.scrollController ?? ScrollController();
     scrollController.addListener(() => _onScroll());
     super.initState();
   }
@@ -54,65 +57,61 @@ class _MessageListState extends State<MessageList> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
+      onTap: widget.onChatTap, // () => FocusScope.of(context).requestFocus(FocusNode()),
       child: Stack(
         children: <Widget>[
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Expanded(
-                child: ListView.builder(
-                  physics: widget.messageListOptions.scrollPhysics,
-                  controller: scrollController,
+                child: SingleChildScrollView(
                   reverse: true,
-                  itemCount: widget.messages.length,
-                  itemBuilder: (BuildContext context, int i) {
-                    final ChatMessage? previousMessage =
-                        i < widget.messages.length - 1
-                            ? widget.messages[i + 1]
-                            : null;
-                    final ChatMessage? nextMessage =
-                        i > 0 ? widget.messages[i - 1] : null;
-                    final ChatMessage message = widget.messages[i];
-                    final bool isAfterDateSeparator = _shouldShowDateSeparator(
-                        previousMessage, message, widget.messageListOptions);
-                    bool isBeforeDateSeparator = false;
-                    if (nextMessage != null) {
-                      isBeforeDateSeparator = _shouldShowDateSeparator(
-                          message, nextMessage, widget.messageListOptions);
-                    }
-                    return Column(
-                      children: <Widget>[
-                        if (isAfterDateSeparator)
-                          widget.messageListOptions.dateSeparatorBuilder != null
-                              ? widget.messageListOptions
-                                  .dateSeparatorBuilder!(message.createdAt)
-                              : DefaultDateSeparator(
-                                  date: message.createdAt,
-                                  messageListOptions: widget.messageListOptions,
-                                ),
-                        if (widget.messageOptions.messageRowBuilder !=
-                            null) ...<Widget>[
-                          widget.messageOptions.messageRowBuilder!(
-                            message,
-                            previousMessage,
-                            nextMessage,
-                            isAfterDateSeparator,
-                            isBeforeDateSeparator,
-                          ),
-                        ] else
-                          MessageRow(
-                            message: widget.messages[i],
-                            nextMessage: nextMessage,
-                            previousMessage: previousMessage,
-                            currentUser: widget.currentUser,
-                            isAfterDateSeparator: isAfterDateSeparator,
-                            isBeforeDateSeparator: isBeforeDateSeparator,
-                            messageOptions: widget.messageOptions,
-                          ),
-                      ],
-                    );
-                  },
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    physics: widget.messageListOptions.scrollPhysics,
+                    // controller: scrollController,
+                    reverse: true,
+                    itemCount: widget.messages.length,
+                    itemBuilder: (BuildContext context, int i) {
+                      final ChatMessage? previousMessage = i < widget.messages.length - 1 ? widget.messages[i + 1] : null;
+                      final ChatMessage? nextMessage = i > 0 ? widget.messages[i - 1] : null;
+                      final ChatMessage message = widget.messages[i];
+                      final bool isAfterDateSeparator = _shouldShowDateSeparator(previousMessage, message, widget.messageListOptions);
+                      bool isBeforeDateSeparator = false;
+                      if (nextMessage != null) {
+                        isBeforeDateSeparator = _shouldShowDateSeparator(message, nextMessage, widget.messageListOptions);
+                      }
+                      return Column(
+                        children: <Widget>[
+                          if (isAfterDateSeparator)
+                            widget.messageListOptions.dateSeparatorBuilder != null
+                                ? widget.messageListOptions.dateSeparatorBuilder!(message.createdAt)
+                                : DefaultDateSeparator(
+                                    date: message.createdAt,
+                                    messageListOptions: widget.messageListOptions,
+                                  ),
+                          if (widget.messageOptions.messageRowBuilder != null) ...<Widget>[
+                            widget.messageOptions.messageRowBuilder!(
+                              message,
+                              previousMessage,
+                              nextMessage,
+                              isAfterDateSeparator,
+                              isBeforeDateSeparator,
+                            ),
+                          ] else
+                            MessageRow(
+                              message: widget.messages[i],
+                              nextMessage: nextMessage,
+                              previousMessage: previousMessage,
+                              currentUser: widget.currentUser,
+                              isAfterDateSeparator: isAfterDateSeparator,
+                              isBeforeDateSeparator: isBeforeDateSeparator,
+                              messageOptions: widget.messageOptions,
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
               if (widget.typingUsers != null && widget.typingUsers!.isNotEmpty)
@@ -122,8 +121,7 @@ class _MessageListState extends State<MessageList> {
                   }
                   return DefaultTypingBuilder(user: user);
                 }).toList(),
-              if (widget.messageListOptions.showFooterBeforeQuickReplies &&
-                  widget.messageListOptions.chatFooterBuilder != null)
+              if (widget.messageListOptions.showFooterBeforeQuickReplies && widget.messageListOptions.chatFooterBuilder != null)
                 widget.messageListOptions.chatFooterBuilder!,
               if (widget.messages.isNotEmpty &&
                   widget.messages.first.quickReplies != null &&
@@ -133,8 +131,7 @@ class _MessageListState extends State<MessageList> {
                   quickReplies: widget.messages.first.quickReplies!,
                   quickReplyOptions: widget.quickReplyOptions,
                 ),
-              if (!widget.messageListOptions.showFooterBeforeQuickReplies &&
-                  widget.messageListOptions.chatFooterBuilder != null)
+              if (!widget.messageListOptions.showFooterBeforeQuickReplies && widget.messageListOptions.chatFooterBuilder != null)
                 widget.messageListOptions.chatFooterBuilder!,
             ],
           ),
@@ -152,8 +149,7 @@ class _MessageListState extends State<MessageList> {
             ),
           if (!widget.scrollToBottomOptions.disabled && scrollToBottomIsVisible)
             widget.scrollToBottomOptions.scrollToBottomBuilder != null
-                ? widget.scrollToBottomOptions
-                    .scrollToBottomBuilder!(scrollController)
+                ? widget.scrollToBottomOptions.scrollToBottomBuilder!(scrollController)
                 : DefaultScrollToBottom(
                     scrollController: scrollController,
                     backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -165,8 +161,7 @@ class _MessageListState extends State<MessageList> {
   }
 
   /// Check if a date separator needs to be shown
-  bool _shouldShowDateSeparator(ChatMessage? previousMessage,
-      ChatMessage message, MessageListOptions messageListOptions) {
+  bool _shouldShowDateSeparator(ChatMessage? previousMessage, ChatMessage message, MessageListOptions messageListOptions) {
     if (!messageListOptions.showDateSeparator) {
       return false;
     }
@@ -209,12 +204,8 @@ class _MessageListState extends State<MessageList> {
   /// Sroll listener to trigger different actions:
   /// show scroll-to-bottom btn and LoadEarlier behaviour
   Future<void> _onScroll() async {
-    bool topReached =
-        scrollController.offset >= scrollController.position.maxScrollExtent &&
-            !scrollController.position.outOfRange;
-    if (topReached &&
-        widget.messageListOptions.onLoadEarlier != null &&
-        !isLoadingMore) {
+    bool topReached = scrollController.offset >= scrollController.position.maxScrollExtent && !scrollController.position.outOfRange;
+    if (topReached && widget.messageListOptions.onLoadEarlier != null && !isLoadingMore) {
       setState(() {
         isLoadingMore = true;
       });
