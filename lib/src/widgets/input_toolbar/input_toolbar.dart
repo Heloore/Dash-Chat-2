@@ -153,7 +153,7 @@ class _InputToolbarState extends State<InputToolbar> {
   }
 
   void _showMentionModal(List<Widget> children) {
-    final OverlayState overlay = Overlay.of(context)!;
+    final OverlayState overlay = Overlay.of(context);
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
     final Offset topLeftCornerOffset = renderBox.localToGlobal(Offset.zero);
 
@@ -187,7 +187,7 @@ class _InputToolbarState extends State<InputToolbar> {
               ),
             ),
             child: Material(
-              color: Theme.of(context).selectedRowColor,
+              // color: Theme.of(context).colo,
               child: SingleChildScrollView(
                 child: Column(
                   children: children,
